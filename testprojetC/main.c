@@ -221,7 +221,7 @@ int main() {
         Ticket ticket;
         Login login;
         int choice;
-        int goMenu = 1;
+        int goMenu = 0;
         int counterLogin;
 
        do{
@@ -261,16 +261,16 @@ int main() {
             list_tickets();
         } else if (choice == 3) {
             update_ticket_status();
+        } else if (choice == 4) {
+            goMenu=1;
+            break;
         } else if (choice == 5) {
             goMenu=0;
             break;
-        } else if (choice == 4) {
-            return 0;
         } else
             printf("Error: Invalid choice.\n");
         }
     }
        while(goMenu == 1);
-
     return 0;
 }
