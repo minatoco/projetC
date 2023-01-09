@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/qjoll/CLionProjects/testprojetC/cmake-build-debug"
+			"value" : "d:/git/Projet C/projetC/testprojetC/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -154,7 +154,7 @@
 					"value" : "C compiler"
 				}
 			],
-			"type" : "STRING",
+			"type" : "FILEPATH",
 			"value" : "C:/Program Files/JetBrains/CLion 2022.2.4/bin/mingw/bin/gcc.exe"
 		},
 		{
@@ -431,7 +431,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/qjoll/CLionProjects/testprojetC/cmake-build-debug/CMakeFiles/pkgRedirects"
+			"value" : "D:/git/Projet C/projetC/testprojetC/cmake-build-debug/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -503,7 +503,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Users/qjoll/CLionProjects/testprojetC"
+			"value" : "D:/git/Projet C/projetC/testprojetC"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1131,7 +1131,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/qjoll/CLionProjects/testprojetC/cmake-build-debug"
+			"value" : "D:/git/Projet C/projetC/testprojetC/cmake-build-debug"
 		},
 		{
 			"name" : "testprojetC_IS_TOP_LEVEL",
@@ -1155,7 +1155,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/qjoll/CLionProjects/testprojetC"
+			"value" : "D:/git/Projet C/projetC/testprojetC"
 		}
 	],
 	"kind" : "cache",

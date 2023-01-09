@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/qjoll/CLionProjects/testprojetC/cmake-build-debug",
-		"source" : "C:/Users/qjoll/CLionProjects/testprojetC"
+		"build" : "D:/git/Projet C/projetC/testprojetC/cmake-build-debug",
+		"source" : "D:/git/Projet C/projetC/testprojetC"
 	},
 	"version" : 
 	{
