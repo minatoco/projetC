@@ -515,7 +515,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "C:/Program Files (x86)/testprojetC"
+			"value" : "C:/Program Files (x86)/test123"
 		},
 		{
 			"name" : "CMAKE_LINKER",
@@ -731,7 +731,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "testprojetC"
+			"value" : "test123"
 		},
 		{
 			"name" : "CMAKE_RANLIB",
@@ -1122,7 +1122,7 @@
 			"value" : "TRUE"
 		},
 		{
-			"name" : "testprojetC_BINARY_DIR",
+			"name" : "test123_BINARY_DIR",
 			"properties" : 
 			[
 				{
@@ -1134,7 +1134,7 @@
 			"value" : "D:/git/Projet C/projetC/testprojetC/cmake-build-debug"
 		},
 		{
-			"name" : "testprojetC_IS_TOP_LEVEL",
+			"name" : "test123_IS_TOP_LEVEL",
 			"properties" : 
 			[
 				{
@@ -1146,7 +1146,7 @@
 			"value" : "ON"
 		},
 		{
-			"name" : "testprojetC_SOURCE_DIR",
+			"name" : "test123_SOURCE_DIR",
 			"properties" : 
 			[
 				{

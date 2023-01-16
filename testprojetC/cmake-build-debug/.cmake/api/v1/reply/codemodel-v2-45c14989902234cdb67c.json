@@ -27,7 +27,7 @@
 					[
 						0
 					],
-					"name" : "testprojetC",
+					"name" : "test123",
 					"targetIndexes" : 
 					[
 						0
@@ -38,9 +38,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "testprojetC::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-testprojetC-Debug-1f270013563be393ac2b.json",
-					"name" : "testprojetC",
+					"id" : "test123::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test123-Debug-1b859a7e22426d9ae146.json",
+					"name" : "test123",
 					"projectIndex" : 0
 				}
 			]

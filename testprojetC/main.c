@@ -14,6 +14,7 @@ typedef struct {
     char name[50];
     int role;
     char password[50];
+    char service[50];
 } Login;
 
 typedef struct{
@@ -21,6 +22,7 @@ typedef struct{
     char name[50];
     int role;
     char password[50];
+    char service[50];
 } Enregistrer;
 
 typedef struct {
@@ -29,6 +31,7 @@ typedef struct {
     char description[200];
     int status;
     char service[50];
+    char name[50];
 } Ticket;
 
 typedef struct {
@@ -88,7 +91,73 @@ void print_user(int id_utilisateur){
     mysql_close(mysql);
 }
 
-void registerlogin(){
+void delete_user(int id,char name_admin[50]){
+    char name_remove[50];
+    char query[255];
+    MYSQL *mysql;
+    mysql = mysql_init(NULL);
+    mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "option");
+
+    if (mysql_real_connect(mysql, DB_HOST, DB_USER, DB_PASSWORD, NULL, DB_PORT, NULL, 0) == NULL){
+        fprintf(stderr, mysql_error(mysql));
+
+    }
+    snprintf(query,255,"USE %s",DB_NAME);
+    if(mysql_query(mysql,query)){
+        finish_with_error(mysql);
+    }
+    snprintf(query,255 ,"SELECT name FROM utilisateur WHERE id = %d", id);
+    MYSQL_RES * res;
+    mysql_query(mysql, query);
+    res = mysql_store_result(mysql);// dernier resultat
+    if(res == NULL ){
+        finish_with_error(mysql);
+    }
+    MYSQL_ROW row;
+    row = mysql_fetch_row(res);
+    strcpy(name_remove,row[0]);
+
+    snprintf(query,255 ,"DELETE FROM utilisateur WHERE id = %d", id);
+    mysql_query(mysql, query);
+
+
+    snprintf(query,255,"USE %s",DB_NAME);
+    if(mysql_query(mysql,query)){
+        finish_with_error(mysql);
+    }
+
+    snprintf(query,255 ,"INSERT INTO historique (id_ticket,user_name, action) VALUES (0, '%s' ,'suppression de l''utilisateur %s')",name_admin,name_remove);
+    mysql_query(mysql, query);
+}
+
+void deleteTicket(int id,char name[50]) {
+    char query[255];
+    MYSQL *mysql;
+    mysql = mysql_init(NULL);
+    mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "option");
+
+    if (mysql_real_connect(mysql, DB_HOST, DB_USER, DB_PASSWORD, NULL, DB_PORT, NULL, 0) == NULL){
+        fprintf(stderr, mysql_error(mysql));
+
+    }
+    snprintf(query,255,"USE %s",DB_NAME);
+    if(mysql_query(mysql,query)){
+        finish_with_error(mysql);
+    }
+
+
+    snprintf(query,255 ,"DELETE FROM commentaires WHERE id_ticket = %d", id);
+    mysql_query(mysql, query);
+    snprintf(query,255 ,"DELETE FROM ticket WHERE id = %d", id);
+    mysql_query(mysql, query);
+    snprintf(query,255 ,"INSERT INTO historique (id_ticket,user_name, action) VALUES (%d, '%s' ,'supprimé du ticket et des commentaires')", id,name);
+    mysql_query(mysql, query);
+
+    mysql_close(mysql);
+}
+
+void registerlogin(char name[50]){
+    int service;
     char query[300];
     char verification[3];
     Enregistrer enregistrer;
@@ -123,12 +192,48 @@ void registerlogin(){
         scanf("%d", &enregistrer.role);
         fflush(stdin);
 
+        while(1) {
+            printf("Entrer le service qui a un probleme :\n");
+            printf("1.Service de Production\n"
+                   "2.Service de Ventes\n"
+                   "3.Service de Recherche et Developpement\n"
+                   "4.Service de Comptabilite et Finance\n"
+                   "5.Service de Ressources Humaines\n");
+            scanf("%d", &service);
+            fflush(stdin);
+
+            if (service == 1) {
+                strcpy(enregistrer.service, "Service de Production");
+                break;
+            }
+            if (service == 2) {
+                strcpy(enregistrer.service, "Service de Ventes");
+                break;
+            }
+            if (service == 3) {
+                strcpy(enregistrer.service, "Service de Recherche et Developpement");
+                break;
+            }
+            if (service == 4) {
+                strcpy(enregistrer.service, "Service de Comptabilite et Finance");
+                break;
+            }
+            if (service == 5) {
+                strcpy(enregistrer.service, "Service de Ressources Humaines");
+                break;
+            } else {
+                printf("Erreur lors du choix du service");
+            }
+        }
+
         printf("est ce que vous etes sur de ce que vous avez mis ?\necrivez oui ou non en minuscule :\n");
         inputStrings(verification,5);
         if(!strcmp(verification,"oui")){
-            snprintf(query,300,"insert into utilisateur (name, role, password) VALUES ('%s', %d, '%s')",enregistrer.name,enregistrer.role,enregistrer.password);
-            printf("%s\n",query);
+            snprintf(query,300,"insert into utilisateur (name, role, password,service) VALUES ('%s', %d, '%s','%s')",enregistrer.name,enregistrer.role,enregistrer.password,enregistrer.service);
+
             mysql_query(mysql,query);
+            snprintf(query,300 ,"INSERT INTO historique (id_ticket,user_name, action) VALUES (0, '%s' ,'ajout de l''utilisateur %s')",name,enregistrer.name);
+            mysql_query(mysql, query);
             break;
         }
 
@@ -165,13 +270,16 @@ void print_ticket(int id_ticket) {
         temp = atoi(row[0]);
             if(temp == id_ticket) {
                 printf("ID: %d\n", temp);
+                printf("Cree par : %s\n",row[5]);
                 printf("Service : %s\n", row[4]);
                 printf("Titre: %s\n", row[1]);
                 printf("Description: %s\n", row[2]);
 
                 if (atoi(row[3]) == 1) {
                     printf("Status: Ferme\n");
-                } else {
+                } else if (atoi(row[3]) == 2) {
+                    printf("Status: En attente de confirmation\n");
+                } else{
                     printf("Status: Ouvert\n");
                 }
                 break;
@@ -182,6 +290,7 @@ void print_ticket(int id_ticket) {
 }
 
 void addcomment(int id_ticket,int id_user){
+    char name[50];
     char query[300];
     char verification[3];
     Comment comments;
@@ -199,8 +308,18 @@ void addcomment(int id_ticket,int id_user){
         if (mysql_query(mysql, query)) {
             finish_with_error(mysql);
         }
+        snprintf(query,200,"SELECT name FROM utilisateur WHERE id=%d",id_user);
+        MYSQL_RES * res;
+        mysql_query(mysql, query);
+        res = mysql_store_result(mysql);// dernier resultat
+        if(res == NULL ){
+            finish_with_error(mysql);
+        }
+        MYSQL_ROW row;
+        row = mysql_fetch_row(res);
+        strcpy(name,row[0]);
+
         mysql_query(mysql, "SELECT * from commentaires");
-        MYSQL_RES *res;
         res = mysql_store_result(mysql); // dernier resultat
         if (res == NULL) {
             finish_with_error(mysql);
@@ -215,12 +334,15 @@ void addcomment(int id_ticket,int id_user){
         if(!strcmp(verification,"oui")){
             snprintf(query,300,"insert into commentaires (id_utilisateur, id_ticket, commentaire) VALUES (%d, %d, '%s')",id_user,id_ticket,comments.comment);
             mysql_query(mysql,query);
+            snprintf(query,300 ,"INSERT INTO historique (id_ticket,user_name, action) VALUES (%d, '%s' ,'ajout d'un commentaire sur un ticket')",id_ticket,name);
+            mysql_query(mysql, query);
             break;
         }
     }
 }
 
-void view_ticket(int ticket_id,int id_user) {
+void view_ticket(int ticket_id,int id_user,int role) {
+    char name[50];
     int choicerespons;
     int champs;
     char query[300];
@@ -273,6 +395,9 @@ void view_ticket(int ticket_id,int id_user) {
 
     while(1) {
         printf("\n");
+        if(role == 0){
+            printf("2. Supprimer ce ticket\n");
+        }
         printf("1. Ajouter un commentaire\n");  // choix
         printf("0. Quitter\n\n");
         scanf("%d", &choicerespons);
@@ -280,6 +405,25 @@ void view_ticket(int ticket_id,int id_user) {
         if (choicerespons == 0) {
             return;
         }
+        if(choicerespons == 2 && role == 0){
+            snprintf(query,300,"USE %s",DB_NAME);
+            if(mysql_query(mysql,query)){
+                finish_with_error(mysql);
+            }
+            snprintf(query,200,"SELECT name FROM utilisateur WHERE id=%d",id_user);
+            mysql_query(mysql, query);
+            res = mysql_store_result(mysql);// dernier resultat
+            if(res == NULL ){
+                finish_with_error(mysql);
+            }
+            row = mysql_fetch_row(res);
+            strcpy(name,row[0]);
+
+            deleteTicket(ticket_id,name);
+            return;
+            }
+
+
         if(choicerespons == 1){
             addcomment(ticket_id,id_user);
             print_ticket(ticket_id);
@@ -320,10 +464,11 @@ void view_ticket(int ticket_id,int id_user) {
 
 }
 
-void create_ticket() {
-    int champs;
+void create_ticket(char name[50], char service_login[50]) {
     char query[300];
     char verification[5];
+    int service = 0;
+    Ticket ticket;
 
     MYSQL *mysql;
     mysql = mysql_init(NULL);
@@ -333,9 +478,6 @@ void create_ticket() {
     if (mysql_real_connect(mysql, DB_HOST, DB_USER, DB_PASSWORD, NULL, DB_PORT, NULL, 0) == NULL){
         fprintf(stderr, mysql_error(mysql));
     }
-
-    int service;
-    Ticket ticket;
 
     snprintf(query,300,"USE %s",DB_NAME);
     if(mysql_query(mysql,query)){
@@ -352,33 +494,33 @@ void create_ticket() {
 
         while (1) {
 
-
-            printf("Entrer le service qui a un probleme :\n");
-            printf("1.Service de Production\n"
-                   "2.Service de Ventes\n"
-                   "3.Service de Recherche et Developpement\n"
-                   "4.Service de Comptabilite et Finance\n"
-                   "5.Service de Ressources Humaines\n");
-            scanf("%d", &service);
-            fflush(stdin);
-
-            if (service == 1) {
+            if(!strcmp(service_login,"tout service")) {
+                printf("Entrer le service qui a un probleme :\n");
+                printf("1.Service de Production\n"
+                       "2.Service de Ventes\n"
+                       "3.Service de Recherche et Developpement\n"
+                       "4.Service de Comptabilite et Finance\n"
+                       "5.Service de Ressources Humaines\n");
+                scanf("%d", &service);
+                fflush(stdin);
+            }
+            if (service == 1 || !strcmp(service_login,"Service de Production")) {
                 strcpy(ticket.service, "Service de Production");
                 break;
             }
-            if (service == 2) {
+            if (service == 2 || !strcmp(service_login,"Service de Ventes")) {
                 strcpy(ticket.service, "Service de Ventes");
                 break;
             }
-            if (service == 3) {
+            if (service == 3 || !strcmp(service_login,"Service de Recherche et Developpement")) {
                 strcpy(ticket.service, "Service de Recherche et Developpement");
                 break;
             }
-            if (service == 4) {
+            if (service == 4 || !strcmp(service_login,"Service de Comptabilite et Finance")) {
                 strcpy(ticket.service, "Service de Comptabilite et Finance");
                 break;
             }
-            if (service == 5) {
+            if (service == 5 || !strcmp(service_login,"Service de Ressources Humaines")) {
                 strcpy(ticket.service, "Service de Ressources Humaines");
                 break;
             } else {
@@ -398,9 +540,11 @@ void create_ticket() {
         printf("est ce que vous etes sur de ce que vous avez mis ?\necrivez oui ou non en minuscule :\n");
         inputStrings(verification, 5);
         if (!strcmp(verification, "oui")) {
-            snprintf(query, 300, "INSERT INTO ticket(title, description, status, section) VALUES ('%s','%s',%d,'%s')",
+            snprintf(query, 300, "INSERT INTO ticket(title, description, status, section, name_create) VALUES ('%s','%s',%d,'%s','%s')",
                      ticket.title,
-                     ticket.description, 0,ticket.service);
+                     ticket.description, 0,ticket.service,name);
+            mysql_query(mysql, query);
+            snprintf(query,300 ,"INSERT INTO historique (id_ticket,user_name, action) VALUES (%d, '%s' ,'creation d''un nouveau ticket')",ticket.id,name);
             mysql_query(mysql, query);
             break;
         }
@@ -408,7 +552,93 @@ void create_ticket() {
 
 }
 
-void list_tickets(int id_user) {
+void list_users(int role,int id_user,char name[50]){
+    char verification[5];
+    int choice_user;
+    int champs;
+    char query[300];
+
+    if(role != 0){
+        return;
+    }
+
+    MYSQL *mysql;
+    mysql = mysql_init(NULL);
+    mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "option");
+
+
+    if (mysql_real_connect(mysql, DB_HOST, DB_USER, DB_PASSWORD, NULL, DB_PORT, NULL, 0) == NULL){
+        fprintf(stderr, mysql_error(mysql));
+    }
+
+    snprintf(query,300,"USE %s",DB_NAME);
+    if(mysql_query(mysql,query)){
+        finish_with_error(mysql);
+    }
+    mysql_query(mysql,"SELECT * from utilisateur");
+    MYSQL_RES * res;
+    res = mysql_store_result(mysql); // dernier resultat
+    if(res == NULL ){
+        finish_with_error(mysql);
+    }
+    champs = mysql_num_rows(res);
+    MYSQL_ROW row;
+    row = mysql_fetch_row(res);
+    for (int i = 0; i < champs; i++) {
+        if(atoi(row[0])!= id_user) {
+            printf("ID: %d\n", atoi(row[0]));
+            printf("Nom d'utilisateur : %s\n", row[1]);
+            if (atoi(row[2]) == 0) {
+                printf("Role: SuperAdmin\n");
+            } else if (atoi(row[2]) == 1) {
+                printf("Role: Moderateur\n");
+            } else if (atoi(row[2]) == 2) {
+                printf("Role: Utilisateur\n");
+            }
+                if (!strcmp(row[4],"Service de Production" )) {
+                    printf("Service: Service de Production\n");
+                }
+                if (!strcmp(row[4], "Service de Ventes")) {
+                    printf("Service: Service de Ventes\n");
+                }
+                if (!strcmp(row[4], "Service de Recherche et Developpement")) {
+                    printf("Service: Service de Recherche et Developpement\n");
+                }
+                if (!strcmp(row[4], "Service de Comptabilite et Finance")) {
+                    printf("Service: Service de Comptabilite et Finance\n");
+                }
+                if (!strcmp(row[4],"Service de Ressources Humaines")) {
+                    printf("Service: Service de Ressources Humaines\n");
+                }
+            }
+
+
+        printf("\n");
+        row = mysql_fetch_row(res);
+    }
+    mysql_free_result(res);
+
+    while(1) {
+        printf("Ecrivez l'id utilisateur que vous voulez supprimer :\n");
+        printf("0. Quitter\n");
+        scanf("%d", &choice_user);
+        fflush(stdin);
+        if (choice_user == 0) {
+            return;
+        } else if (choice_user != id_user) {
+            printf("est ce que vous etes sur de ce que vous avez mis ?\necrivez oui ou non en minuscule :\n");
+            inputStrings(verification, 5);
+            if (!strcmp(verification, "oui")) {
+                delete_user(choice_user,name);
+            }
+            list_users(role, id_user,name);
+        }else
+            printf("Erreur, vous ne pouvez pas vous supprimer vous meme \n\n");
+            return;
+    }
+}
+
+void list_tickets(int id_user,int role,char service[50],char name[50]) { // r'ajoute des ticket par rapport a la personne et au role
     int champs;
     int choiceticket;
 
@@ -434,22 +664,25 @@ void list_tickets(int id_user) {
     if(res == NULL ){
         finish_with_error(mysql);
     }
-    MYSQL_ROW row;
     champs = mysql_num_rows(res);
-
+    MYSQL_ROW row;
 
 
     if(champs==0){
         printf("Vous n'avez pas de tickets \n\n");
-
     }else {
         row = mysql_fetch_row(res);
         for (int i = 0; i < champs; i++) {
             int temp;
             temp =atoi(row[0]);
-
-           print_ticket(temp);
-            printf("\n\n");
+            if(role == 0) {
+                print_ticket(temp);
+            }else if(role == 1 && !strcmp(service,row[4])){
+                print_ticket(temp);
+            }else if(role == 2 && !strcmp(name,row[5])){
+                print_ticket(temp);
+            }
+            printf("\n");
             row = mysql_fetch_row(res);
         }
         mysql_free_result(res);
@@ -457,6 +690,7 @@ void list_tickets(int id_user) {
             printf("Ecrivez le numero du ticket\n");
             printf("0. Quitter\n");
             scanf("%d",&choiceticket);
+            fflush(stdin);
             if(choiceticket == 0) {
                 return;
             }
@@ -472,12 +706,32 @@ void list_tickets(int id_user) {
             for (int i = 0; i < champs; ++i) {
                 int temp;
                 temp = atoi(row[0]);
-                if (choiceticket == temp) {
+                if(role == 0) {
+                    if (choiceticket == temp) {
 
-                    print_ticket(temp);
-                    view_ticket(temp,id_user);
-                    list_tickets(id_user);
-                    printf("Voulez-vous quitter la liste des tickets cliquez sur 0 sinon cliquez sinon\n");
+                        print_ticket(temp);
+                        view_ticket(temp,id_user,role);
+                        list_tickets(id_user,role,service,name);
+                        printf("Voulez-vous quitter la liste des tickets cliquez sur 0 sinon cliquez sinon\n");
+                    }
+                }else if(role == 1 && !strcmp(service,row[4])){
+                    if (choiceticket == temp) {
+
+                        print_ticket(temp);
+                        view_ticket(temp,id_user,role);
+                        list_tickets(id_user,role,service,name);
+                        printf("Voulez-vous quitter la liste des tickets cliquez sur 0 sinon cliquez sinon\n");
+                    }
+                }else if(role == 2 && !strcmp(name,row[5])){
+                    if (choiceticket == temp) {
+
+                        print_ticket(temp);
+                        view_ticket(temp,id_user,role);
+                        list_tickets(id_user,role,service,name);
+                        printf("Voulez-vous quitter la liste des tickets cliquez sur 0 sinon cliquez sinon\n");
+                    }
+                }else if (choiceticket == temp) {
+                    printf("vous n'avez pas acces a ce ticket\n");
                 }
                 row = mysql_fetch_row(res);
             }
@@ -487,7 +741,7 @@ void list_tickets(int id_user) {
 
 }
 
-void update_ticket_status() {
+void update_ticket_status(int login_role) {
     int id;
     int champs;
     Ticket ticket;
@@ -524,24 +778,28 @@ void update_ticket_status() {
         int temp;
         temp = atoi(row[0]);
         if (temp == id) {
-            printf("Entrer Nouveau status(\n-0 pour ouvert \n-1 pour fermer): \n");
+            printf("Entrer Nouveau status\n-0 pour ouvert \n-1 pour fermer\n-2 pour l'attente d'une confirmation: \n");
             scanf("%d", &ticket.status);
             fflush(stdin);
 
-            if(ticket.status == 1){
+            if(ticket.status == 1 && login_role == 0){
                 snprintf(query,200,"UPDATE ticket SET status=%d WHERE id=%d",ticket.status,id);
                 mysql_query(mysql, query);
                 printf("\nLes changements on bien etais pris en compte\n\n");
                 mysql_free_result(res);
 
-            }else if(ticket.status == 0){
+            }else if(ticket.status == 0 && login_role == 0){
                 snprintf(query,200,"UPDATE ticket SET status=%d WHERE id=%d",ticket.status,id);
                 mysql_query(mysql, query);
                 printf("\nLes changements on bien etais pris en compte\n\n");
                 mysql_free_result(res);
-            }else{
-                printf("Erreur Veuillez ressaisir le nouveau status\n\n");
-            }
+            }else if(ticket.status == 2){
+                snprintf(query,200,"UPDATE ticket SET status=%d WHERE id=%d",ticket.status,id);
+                mysql_query(mysql, query);
+                printf("\nLes changements on bien etais pris en compte\n\n");
+                mysql_free_result(res);
+            }else
+                printf("Erreur lors de la saisie du nouveau status\n\n");
 
         }
         row = mysql_fetch_row(res);
@@ -556,22 +814,23 @@ int main(int argc, char **argv) {
     int goMenu = 0;
     int counterLogin;
     int veriflogin =0;
-    MYSQL *mysql;
-    mysql = mysql_init(NULL);
-    mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "option");
 
-    if (mysql_real_connect(mysql, DB_HOST, DB_USER, DB_PASSWORD, NULL, DB_PORT, NULL, 0) == NULL){
-        fprintf(stderr, mysql_error(mysql));
-
-    }
-    char query[200];
-    snprintf(query,200,"USE %s",DB_NAME);
-    if(mysql_query(mysql,query)){
-        finish_with_error(mysql);
-    }
 
 
     do{
+        MYSQL *mysql;
+        mysql = mysql_init(NULL);
+        mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "option");
+
+        if (mysql_real_connect(mysql, DB_HOST, DB_USER, DB_PASSWORD, NULL, DB_PORT, NULL, 0) == NULL){
+            fprintf(stderr, mysql_error(mysql));
+
+        }
+        char query[200];
+        snprintf(query,200,"USE %s",DB_NAME);
+        if(mysql_query(mysql,query)){
+            finish_with_error(mysql);
+        }
 
         for(counterLogin = 0;counterLogin<3;++counterLogin){
             printf("Name : ");
@@ -592,6 +851,7 @@ int main(int argc, char **argv) {
             champs = mysql_num_rows(res);
 
             row = mysql_fetch_row(res);
+
             for (int i = 0; i < champs; ++i) {
 
                 if(!strcmp(login.name, row[1]) && !strcmp(login.password, row[3])){
@@ -605,6 +865,7 @@ int main(int argc, char **argv) {
 
 
             if(veriflogin == 1){
+                mysql_free_result(res);
                 break;
             }
             mysql_free_result(res);
@@ -615,63 +876,139 @@ int main(int argc, char **argv) {
 
 
 
-        while (veriflogin == 1){
-
+        while (veriflogin == 1) {
             MYSQL *mysql;
             mysql = mysql_init(NULL);
             mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "option");
 
-            if (mysql_real_connect(mysql, DB_HOST, DB_USER, DB_PASSWORD, NULL, DB_PORT, NULL, 0) == NULL){
+            if (mysql_real_connect(mysql, DB_HOST, DB_USER, DB_PASSWORD, NULL, DB_PORT, NULL, 0) == NULL) {
                 fprintf(stderr, mysql_error(mysql));
 
             }
             char query[200];
-            snprintf(query,200,"USE %s",DB_NAME);
-            if(mysql_query(mysql,query)){
+            snprintf(query, 200, "USE %s", DB_NAME);
+            if (mysql_query(mysql, query)) {
                 finish_with_error(mysql);
             }
 
 
-            snprintf(query,200,"SELECT id FROM utilisateur WHERE name='%s'",login.name);
-            MYSQL_RES * res;
+            snprintf(query, 200, "SELECT id FROM utilisateur WHERE name='%s'", login.name);
+            MYSQL_RES *res;
             mysql_query(mysql, query);
             res = mysql_store_result(mysql);// dernier resultat
-            if(res == NULL ){
+            if (res == NULL) {
                 finish_with_error(mysql);
             }
             MYSQL_ROW row;
             row = mysql_fetch_row(res);
             login.id = atoi(row[0]);
+            mysql_free_result(res);
+
+            snprintf(query,200,"SELECT role FROM utilisateur WHERE id=%d",login.id);
+            mysql_query(mysql, query);
+            res = mysql_store_result(mysql);// dernier resultat
+            if(res == NULL ){
+                finish_with_error(mysql);
+            }
+            row = mysql_fetch_row(res);
+            login.role = atoi(row[0]);
+            mysql_free_result(res);
+
+            snprintf(query, 200, "SELECT service FROM utilisateur WHERE id=%d", login.id);
+            mysql_query(mysql, query);
+            res = mysql_store_result(mysql);// dernier resultat
+            if (res == NULL) {
+                finish_with_error(mysql);
+            }
+            row = mysql_fetch_row(res);
+            strcpy(login.service,row[0]);
+            mysql_free_result(res);
 
             mysql_close(mysql);
+            // role 0 , 1 et 2
+            if (login.role == 0) {
+                printf("1. Cree un ticket\n"); //tous les roles
+                printf("2. Liste des tickets\n"); // tous les roles
+                printf("3. Changer le status d'un ticket\n"); // les roles 0 et 1
+                printf("4. Enregistrer un utilisateur\n"); // le role 0
+                printf("5. Liste des utilisateurs\n");
+                printf("6. Deconnecter\n"); // tous les roles
+                printf("7. Quitter\n"); // tous les roles
+                printf("Entrer Le numero attribue: ");
+                scanf("%d", &choice);
+                fflush(stdin);
+                printf("\n\n");
 
-            printf("1. Cree un ticket\n");
-            printf("2. Liste des tickets\n");
-            printf("3. Changer le status d'un ticket\n");
-            printf("4. Enregistrer un utilisateur\n");
-            printf("5. Deconnecter\n");
-            printf("6. Quitter\n");
-            printf("Entrer Le numero attribue: ");
-            scanf("%d", &choice);
-            fflush(stdin);
-            printf("\n\n");
+                if (choice == 1) {
+                    create_ticket(login.name,login.service);
+                } else if (choice == 2) {
+                    list_tickets(login.id,login.role,login.service,login.name);
+                } else if (choice == 3) {
+                    update_ticket_status(login.role);
+                } else if (choice == 4) {
+                    registerlogin(login.name);
+                } else if (choice == 5) {
+                    list_users(login.role,login.id,login.name);
+                } else if (choice == 6) {
+                    goMenu = 1;
+                    break;
+                } else if (choice == 7) {
+                    goMenu = 0;
+                    break;
+                } else
+                    printf("Error: Invalid choice.\n");
+            }
 
-            if (choice == 1) {
-                create_ticket();
-            } else if (choice == 2) {
-                list_tickets(login.id);
-            } else if (choice == 3) {
-                update_ticket_status();
-            } else if(choice == 4){
-                registerlogin();
-            } else if (choice == 5) {
-                goMenu=1;
-                break;
-            } else if (choice == 6) {
-                goMenu=0;
-                break;
-            } else
-                printf("Error: Invalid choice.\n");
+            if(login.role == 1){
+                printf("1. Cree un ticket\n"); //tous les roles
+                printf("2. Liste des tickets\n"); // tous les roles
+                printf("3. Changer le status d'un ticket\n"); // les roles 0 et 1
+                printf("4. Deconnecter\n"); // tous les roles
+                printf("5. Quitter\n"); // tous les roles
+                printf("Entrer Le numero attribue: ");
+                scanf("%d", &choice);
+                fflush(stdin);
+                printf("\n\n");
+
+                if (choice == 1) {
+                    create_ticket(login.name,login.service);
+                } else if (choice == 2) {
+                    list_tickets(login.id,login.role,login.service,login.name);
+                } else if (choice == 3) {
+                    update_ticket_status(login.role);
+                } else if (choice == 4) {
+                    goMenu = 1;
+                    break;
+                } else if (choice == 5) {
+                    goMenu = 0;
+                    break;
+                } else
+                    printf("Erreur: choix invalide.\n");
+            }
+
+            if(login.role == 2){
+                printf("1. Cree un ticket\n"); //tous les roles
+                printf("2. Liste des tickets\n"); // tous les roles
+                printf("3. Deconnecter\n"); // tous les roles
+                printf("4. Quitter\n"); // tous les roles
+                printf("Entrer Le numero attribue: ");
+                scanf("%d", &choice);
+                fflush(stdin);
+                printf("\n\n");
+
+                if (choice == 1) {
+                    create_ticket(login.name,login.service);
+                } else if (choice == 2) {
+                    list_tickets(login.id,login.role,login.service,login.name);
+                } else if (choice == 3) {
+                    goMenu = 1;
+                    break;
+                } else if (choice == 4) {
+                    goMenu = 0;
+                    break;
+                } else
+                    printf("Erreur: choix invalide.\n");
+            }
         }
     }
     while(goMenu == 1);
