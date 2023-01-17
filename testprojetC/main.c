@@ -5,6 +5,7 @@
 #include "function.h"
 #include "function.c"
 
+
 #define DB_USER "root"
 #define DB_HOST "localhost"
 #define DB_PASSWORD ""
@@ -14,12 +15,15 @@
 //la fonction changement de language
 
 int main(int argc, char **argv) {
+    char language[50];
     Login login;
     int champs;
     int choice;
     int goMenu = 0;
     int counterLogin;
     int veriflogin =0;
+
+    read_language_from_file(language);
 
     do{
         MYSQL *mysql;
@@ -37,10 +41,16 @@ int main(int argc, char **argv) {
         }
 
         for(counterLogin = 0;counterLogin<3;++counterLogin){
-            printf("Name : ");
+            if(!strcmp(language,"en") || !strcmp(language,"anglais"))
+                printf("Name : ");
+            else
+                printf("Nom :");
             inputStrings(login.name,50);
             printf("\n");
-            printf("Mot de passe :");
+            if(!strcmp(language,"en") || !strcmp(language,"anglais"))
+                printf("Password : ");
+            else
+                printf("Mot de passe :");
             inputStrings(login.password,50);
             printf("\n");
 
@@ -131,90 +141,149 @@ int main(int argc, char **argv) {
             mysql_close(mysql);
             // role 0 , 1 et 2
             if (login.role == 0) {
-                printf("1. Cree un ticket\n"); //tous les roles
-                printf("2. Liste des tickets\n"); // tous les roles
-                printf("3. Changer le status d'un ticket\n"); // les roles 0 et 1
-                printf("4. Enregistrer un utilisateur\n"); // le role 0
-                printf("5. Liste des utilisateurs\n");
-                printf("6. Voir l'historique\n");
-                printf("7. Deconnecter\n"); // tous les roles
-                printf("8. Quitter\n"); // tous les roles
-                printf("Entrer Le numero attribue: ");
+                if(!strcmp(language,"en") || !strcmp(language,"anglais")){
+                    printf("1. Create a ticket\n"); //tous les roles
+                    printf("2. ticket list\n"); // tous les roles
+                    printf("3. change the status of a ticket\n"); // les roles 0 et 1
+                    printf("4. register a user\n"); // le role 0
+                    printf("5. User list\n");
+                    printf("6. view history\n");
+                    printf("7. Options\n");
+                    printf("8. Disconnect\n"); // tous les roles
+                    printf("9. Exit\n"); // tous les roles
+                    printf("enter assigned number: ");
+                }else {
+                    printf("1. Cree un ticket\n"); //tous les roles
+                    printf("2. Liste des tickets\n"); // tous les roles
+                    printf("3. Changer le status d'un ticket\n"); // les roles 0 et 1
+                    printf("4. Enregistrer un utilisateur\n"); // le role 0
+                    printf("5. Liste des utilisateurs\n");
+                    printf("6. Voir l'historique\n");
+                    printf("7. Options\n");
+                    printf("8. Deconnecter\n"); // tous les roles
+                    printf("9. Quitter\n"); // tous les roles
+                    printf("Entrer Le numero attribue: ");
+                }
                 scanf("%d", &choice);
                 fflush(stdin);
                 printf("\n\n");
 
                 if (choice == 1) {
-                    create_ticket(login.name,login.service);
+                    create_ticket(login.name,login.service,language);
                 } else if (choice == 2) {
-                    list_tickets(login.id,login.role,login.service,login.name);
+                    list_tickets(login.id,login.role,login.service,login.name,language);
                 } else if (choice == 3) {
-                    update_ticket_status(login.role,login.name);
+                    update_ticket_status(login.role,login.name,language);
                 } else if (choice == 4) {
-                    registerlogin(login.name);
+                    registerlogin(login.name,language);
                 } else if (choice == 5) {
-                    list_users(login.role,login.id,login.name);
+                    list_users(login.role,login.id,login.name,language);
                 } else if (choice == 6) {
                     history();
                 } else if (choice == 7) {
+                    change_language(language);
+                    read_language_from_file(language);
+                } else if (choice == 8) {
                     goMenu = 1;
                     break;
-                } else if (choice == 8) {
+                } else if (choice == 9) {
                     goMenu = 0;
                     break;
-                } else
-                    printf("Erreur: choix invalide.\n");
+                } else{
+                    if(!strcmp(language,"en") || !strcmp(language,"anglais")){
+                        printf("Error: Invalid choice.\n");
+                    }else{
+                        printf("Erreur: choix invalide.\n");
+                    }
+                }
             }
 
             if(login.role == 1){
-                printf("1. Cree un ticket\n"); //tous les roles
-                printf("2. Liste des tickets\n"); // tous les roles
-                printf("3. Changer le status d'un ticket\n"); // les roles 0 et 1
-                printf("4. Deconnecter\n"); // tous les roles
-                printf("5. Quitter\n"); // tous les roles
-                printf("Entrer Le numero attribue: ");
+                if(!strcmp(language,"en") || !strcmp(language,"anglais")){
+                    printf("1. Create a ticket\n"); //tous les roles
+                    printf("2. ticket list\n"); // tous les roles
+                    printf("3. change the status of a ticket\n"); // les roles 0 et 1
+                    printf("4. Options\n");
+                    printf("5. Disconnect\n"); // tous les roles
+                    printf("6. Exit\n"); // tous les roles
+                    printf("enter assigned number: ");
+                }else {
+                    printf("1. Cree un ticket\n"); //tous les roles
+                    printf("2. Liste des tickets\n"); // tous les roles
+                    printf("3. Changer le status d'un ticket\n"); // les roles 0 et 1
+                    printf("4. Options\n");
+                    printf("5. Deconnecter\n"); // tous les roles
+                    printf("6. Quitter\n"); // tous les roles
+                    printf("Entrer Le numero attribue: ");
+                }
                 scanf("%d", &choice);
                 fflush(stdin);
                 printf("\n\n");
 
                 if (choice == 1) {
-                    create_ticket(login.name,login.service);
+                    create_ticket(login.name,login.service,language);
                 } else if (choice == 2) {
-                    list_tickets(login.id,login.role,login.service,login.name);
+                    list_tickets(login.id,login.role,login.service,login.name,language);
                 } else if (choice == 3) {
-                    update_ticket_status(login.role,login.name);
+                    update_ticket_status(login.role,login.name,language);
+                } else if (choice == 4) {
+                    change_language(language);
+                    read_language_from_file(language);
+                } else if (choice == 5) {
+                    goMenu = 1;
+                    break;
+                } else if (choice == 6) {
+                    goMenu = 0;
+                    break;
+                } else{
+                    if(!strcmp(language,"en") || !strcmp(language,"anglais")){
+                        printf("Error: Invalid choice.\n");
+                    }else{
+                        printf("Erreur: choix invalide.\n");
+                    }
+                }
+            }
+
+            if(login.role == 2){
+                if(!strcmp(language,"en") || !strcmp(language,"anglais")){
+                    printf("1. Create a ticket\n"); //tous les roles
+                    printf("2. ticket list\n"); // tous les roles
+                    printf("3. Options\n");
+                    printf("4. Disconnect\n"); // tous les roles
+                    printf("5. Exit\n"); // tous les roles
+                    printf("enter assigned number: ");
+                }else {
+                    printf("1. Cree un ticket\n"); //tous les roles
+                    printf("2. Liste des tickets\n"); // tous les roles
+                    printf("3. Options\n");
+                    printf("4. Deconnecter\n"); // tous les roles
+                    printf("5. Quitter\n"); // tous les roles
+                    printf("Entrer Le numero attribue: ");
+                }
+                scanf("%d", &choice);
+                fflush(stdin);
+                printf("\n\n");
+
+                if (choice == 1) {
+                    create_ticket(login.name,login.service,language);
+                } else if (choice == 2) {
+                    list_tickets(login.id,login.role,login.service,login.name,language);
+                } else if (choice == 3) {
+                    change_language(language);
+                    read_language_from_file(language);
                 } else if (choice == 4) {
                     goMenu = 1;
                     break;
                 } else if (choice == 5) {
                     goMenu = 0;
                     break;
-                } else
-                    printf("Erreur: choix invalide.\n");
-            }
-
-            if(login.role == 2){
-                printf("1. Cree un ticket\n"); //tous les roles
-                printf("2. Liste des tickets\n"); // tous les roles
-                printf("3. Deconnecter\n"); // tous les roles
-                printf("4. Quitter\n"); // tous les roles
-                printf("Entrer Le numero attribue: ");
-                scanf("%d", &choice);
-                fflush(stdin);
-                printf("\n\n");
-
-                if (choice == 1) {
-                    create_ticket(login.name,login.service);
-                } else if (choice == 2) {
-                    list_tickets(login.id,login.role,login.service,login.name);
-                } else if (choice == 3) {
-                    goMenu = 1;
-                    break;
-                } else if (choice == 4) {
-                    goMenu = 0;
-                    break;
-                } else
-                    printf("Erreur: choix invalide.\n");
+                } else {
+                    if(!strcmp(language,"en") || !strcmp(language,"anglais")){
+                        printf("Error: Invalid choice.\n");
+                    }else{
+                        printf("Erreur: choix invalide.\n");
+                    }
+                }
             }
         }
     }
